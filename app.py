@@ -1,12 +1,11 @@
 import streamlit as st
 import requests
 from bs4 import BeautifulSoup
-from openai import OpenAI
+from openai import OpenAI, AuthenticationError
 import time
 import plotly.graph_objects as go
 import re
 from datetime import datetime
-import os 
 
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(page_title="AUDITPRO | Consultoría Estratégica", page_icon="💎", layout="wide")
@@ -14,6 +13,7 @@ st.set_page_config(page_title="AUDITPRO | Consultoría Estratégica", page_icon=
 # ==========================================
 # ⚙️ CONFIGURACIÓN DE TU NEGOCIO
 # ==========================================
+# Tu enlace es gumroad.com/l/ilgyxa, así que el permalink es "ilgyxa"
 GUMROAD_PERMALINK = "ilgyxa" 
 # ==========================================
 
@@ -65,20 +65,16 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- GESTIÓN DE CLAVES API (CORREGIDO PARA EVITAR ERROR EN PC) ---
+# --- GESTIÓN DE CLAVES API ---
 api_key = None
-
-# Intentamos leer la clave de la nube de forma segura
 try:
-    # Solo intentamos acceder a secrets si estamos en un entorno que lo soporta
-    # El try-except atrapa el error si no existe el archivo en tu PC
+    # Intenta leer de secrets (Nube)
     if hasattr(st, "secrets") and "OPENAI_API_KEY" in st.secrets:
         api_key = st.secrets["OPENAI_API_KEY"]
-except Exception:
-    # Si falla (porque estás en tu ordenador), no hacemos nada y pasamos al siguiente paso
+except:
     pass
 
-# Si no encontramos la clave en la nube, mostramos el menú lateral para ponerla
+# Si no está en secrets, la pide en el sidebar (PC local)
 if not api_key:
     with st.sidebar:
         st.header("⚙️ Configuración")
@@ -87,6 +83,8 @@ if not api_key:
 
 # --- FUNCIONES ---
 def verify_gumroad_license(key):
+    # Si quieres probar sin comprar, usa TEST. 
+    # Para probar Gumroad real, usa el truco del cupón 100%.
     if key == "TEST": return True, "Modo Pruebas"
     try:
         r = requests.post("https://api.gumroad.com/v2/licenses/verify", 
@@ -185,6 +183,9 @@ def analyze_business_pro(my_text, comp_text, key):
             messages=[{"role": "system", "content": prompt}, {"role": "user", "content": content}]
         )
         return response.choices[0].message.content
+    # --- AQUÍ ESTÁ EL ARREGLO DEL ERROR ROJO ---
+    except AuthenticationError:
+        return "ERROR_API_KEY"
     except Exception as e:
         return f"Error: {str(e)}"
 
@@ -212,7 +213,7 @@ if not st.session_state.report_pro:
     st.markdown('</div>', unsafe_allow_html=True)
 
     if analyze_btn:
-        if not api_key: st.error("⚠️ Falta API Key")
+        if not api_key: st.error("⚠️ Por favor, introduce tu API Key de OpenAI en la barra lateral izquierda.")
         elif not url_input or not email_input: st.warning("⚠️ Web y Email obligatorios")
         else:
             progress_text = "Analizando..."
@@ -227,18 +228,24 @@ if not st.session_state.report_pro:
             
             if my_txt:
                 full_resp = analyze_business_pro(my_txt, comp_txt, api_key)
-                try:
-                    match = re.search(r"SCORE:\s*(\d+)", full_resp)
-                    score = int(match.group(1)) if match else 35
-                    full_resp = re.sub(r"SCORE:\s*\d+", "", full_resp).strip()
-                except: score = 35
                 
-                st.session_state.score_val = score
-                st.session_state.report_pro = full_resp
-                st.session_state.url_analized = url_input
-                st.session_state.email_analized = email_input
-                my_bar.empty()
-                st.rerun()
+                # --- MANEJO DE ERROR DE API ---
+                if full_resp == "ERROR_API_KEY":
+                    st.error("🚨 ERROR: La clave API de OpenAI es incorrecta o ha caducado. Por favor, genera una nueva en platform.openai.com.")
+                    my_bar.empty()
+                else:
+                    try:
+                        match = re.search(r"SCORE:\s*(\d+)", full_resp)
+                        score = int(match.group(1)) if match else 35
+                        full_resp = re.sub(r"SCORE:\s*\d+", "", full_resp).strip()
+                    except: score = 35
+                    
+                    st.session_state.score_val = score
+                    st.session_state.report_pro = full_resp
+                    st.session_state.url_analized = url_input
+                    st.session_state.email_analized = email_input
+                    my_bar.empty()
+                    st.rerun()
             else:
                 st.error(f"❌ Error al leer la web: {error_msg}")
                 st.info("💡 Consejo: Prueba con otra web más accesible para verificar que funciona.")
@@ -274,7 +281,7 @@ else:
     st.markdown(free_part)
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # --- ZONA DE PAGO (HTML COMPRIMIDO PARA EVITAR ERRORES VISUALES) ---
+    # --- ZONA DE PAGO (HTML COMPRIMIDO) ---
     if "unlocked" not in st.session_state or not st.session_state.unlocked:
         st.markdown(f"""<div class="paywall-box"><h2 style="font-size:3rem; font-weight:900; margin-bottom:10px; color:white; border:none; background:transparent;">🔒 INFORME COMPLETO BLOQUEADO</h2><p style="color:#94a3b8; font-size:1.2rem; margin-bottom:40px;">Has visto solo la punta del iceberg. Desbloquea las 2000 palabras de estrategia pura.</p><div style="margin-bottom:40px;"><span class="paywall-price">9,99€</span><span style="font-size:1.5rem; color:#64748b; text-decoration:line-through; margin-left:15px;">50€</span></div><div style="background:rgba(255,255,255,0.1); display:inline-block; padding:15px 30px; border-radius:50px; margin-bottom:40px;"><img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" height="25" style="margin:0 10px; vertical-align:middle;"><img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" height="25" style="margin:0 10px; vertical-align:middle; filter: invert(1);"><img src="https://upload.wikimedia.org/wikipedia/commons/f/f2/Google_Pay_Logo.svg" height="25" style="margin:0 10px; vertical-align:middle;"><img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" height="25" style="margin:0 10px; vertical-align:middle;"><img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" height="15" style="margin:0 10px; vertical-align:middle;"></div><br><a href="https://gumroad.com/l/{GUMROAD_PERMALINK}" target="_blank" style="text-decoration:none;"><button style="background: #3b82f6; color: white; padding: 20px 50px; font-size: 1.3rem; font-weight: 800; border-radius: 50px; border: none; cursor: pointer; box-shadow: 0 0 40px rgba(59, 130, 246, 0.4);">DESBLOQUEAR AHORA 🔓</button></a></div>""", unsafe_allow_html=True)
         
