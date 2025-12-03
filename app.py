@@ -16,19 +16,36 @@ st.set_page_config(page_title="AUDITPRO | Consultoría Estratégica", page_icon=
 GUMROAD_PERMALINK = "ilgyxa" 
 # ==========================================
 
-# --- ESTILOS CSS RESPONSIVE (ARREGLO MÓVIL) ---
+# --- ESTILOS CSS "ULTRA-PREMIUM" ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;800;900&display=swap');
     html, body, [class*="css"] { font-family: 'Montserrat', sans-serif; }
     .stApp { background: radial-gradient(circle at 50% 0%, #f8fafc 0%, #e2e8f0 100%); color: #0f172a; }
 
-    /* --- REGLAS PARA ORDENADOR --- */
-    .main-hero-title { font-size: 5.5rem; font-weight: 900; text-align: center; margin-top: 30px; color: #0f172a; line-height: 1; letter-spacing: -3px; }
+    /* TEXTOS INFORME */
     .report-content h1 { font-size: 2.8rem !important; font-weight: 900 !important; color: #1e3a8a !important; margin-top: 60px !important; margin-bottom: 30px !important; text-transform: uppercase; border-bottom: 4px solid #3b82f6; display: inline-block; }
-    .paywall-price { font-size: 4.5rem; font-weight: 900; color: #2ECC71; }
+    .report-content h2 { font-size: 1.8rem !important; font-weight: 700 !important; color: #334155 !important; margin-top: 40px !important; margin-bottom: 20px !important; border-left: 6px solid #ef4444; padding-left: 15px; background: #fff; padding: 10px 15px; border-radius: 0 10px 10px 0; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    .report-content p, .report-content li { font-size: 1.1rem !important; font-weight: 400 !important; color: #334155 !important; line-height: 1.9 !important; margin-bottom: 20px !important; text-align: justify; }
+    .report-content strong { color: #000 !important; font-weight: 800 !important; background-color: #fef08a; padding: 0 4px; }
+
+    /* CONTENEDORES */
+    .input-display { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); color: #1e293b; margin-bottom: 40px; border: 1px solid #cbd5e1; }
     
-    /* --- REGLAS ESPECIALES PARA MÓVIL (ARREGLO TÍTULO CORTADO) --- */
+    /* PORTADA */
+    .main-hero-title { font-size: 5.5rem; font-weight: 900; text-align: center; margin-top: 30px; color: #0f172a; line-height: 1; letter-spacing: -3px; }
+    .main-hero-title span { color: #2563EB; }
+    .hero-subtitle { text-align: center !important; font-size: 1.6rem; color: #475569; margin-bottom: 50px; font-weight: 400; max-width: 800px; margin-left: auto; margin-right: auto; line-height: 1.5; }
+    
+    /* FORMULARIO */
+    .glass-form { background: rgba(255,255,255,0.95); border: 1px solid white; padding: 50px; border-radius: 30px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15); margin-top: 30px; }
+    .stTextInput label { color: #1e293b !important; font-weight: 700 !important; font-size: 1rem !important; }
+    
+    /* MURO DE PAGO */
+    .paywall-box { background: #020617; color: white; padding: 60px 40px; border-radius: 24px; text-align: center; margin-top: 50px; box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.5); position: relative; z-index: 10; }
+    .paywall-price { font-size: 4.5rem; font-weight: 900; color: #2ECC71; }
+
+    /* RESPONSIVE */
     @media only screen and (max-width: 600px) {
         .main-hero-title { font-size: 3rem !important; letter-spacing: -1px !important; margin-top: 10px !important; }
         .hero-subtitle { font-size: 1.1rem !important; }
@@ -37,19 +54,6 @@ st.markdown("""
         .glass-form { padding: 20px !important; }
         .paywall-box { padding: 20px !important; }
     }
-
-    /* ESTILOS GENERALES */
-    .main-hero-title span { color: #2563EB; }
-    .hero-subtitle { text-align: center !important; font-size: 1.6rem; color: #475569; margin-bottom: 50px; font-weight: 400; max-width: 800px; margin-left: auto; margin-right: auto; line-height: 1.5; }
-    
-    .report-content h2 { font-size: 1.8rem !important; font-weight: 700 !important; color: #334155 !important; margin-top: 40px !important; margin-bottom: 20px !important; border-left: 6px solid #ef4444; padding-left: 15px; background: #fff; padding: 10px 15px; border-radius: 0 10px 10px 0; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-    .report-content p, .report-content li { font-size: 1.1rem !important; font-weight: 400 !important; color: #334155 !important; line-height: 1.9 !important; margin-bottom: 20px !important; text-align: justify; }
-    .report-content strong { color: #000 !important; font-weight: 800 !important; background-color: #fef08a; padding: 0 4px; }
-
-    .input-display { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); color: #1e293b; margin-bottom: 40px; border: 1px solid #cbd5e1; }
-    .glass-form { background: rgba(255,255,255,0.95); border: 1px solid white; padding: 50px; border-radius: 30px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15); margin-top: 30px; }
-    .stTextInput label { color: #1e293b !important; font-weight: 700 !important; font-size: 1rem !important; }
-    .paywall-box { background: #020617; color: white; padding: 60px 40px; border-radius: 24px; text-align: center; margin-top: 50px; box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.5); position: relative; z-index: 10; }
 
     #MainMenu, footer, header {visibility: hidden;}
     .stButton>button { width: 100%; background: linear-gradient(135deg, #2563EB 0%, #1d4ed8 100%); color: white; border: none; padding: 18px; font-weight: 800; font-size: 1.2rem; border-radius: 12px; transition: transform 0.2s; box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.4); }
@@ -87,15 +91,42 @@ def verify_gumroad_license(key):
         return False, f"Error de conexión: {str(e)}"
 
 def get_website_content(url):
+    """
+    Función mejorada para leer webs con protección básica.
+    """
     try:
-        headers = {'User-Agent': 'Mozilla/5.0'}
-        response = requests.get(url, headers=headers, timeout=15)
+        # Headers avanzados para parecer un navegador humano y no un robot
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
+            'Referer': 'https://www.google.com/'
+        }
+        
+        response = requests.get(url, headers=headers, timeout=20)
+        
+        # Si la web nos bloquea (403) o no existe (404)
+        if response.status_code != 200:
+            return None, f"Error {response.status_code}: La web bloquea el acceso o no existe."
+
         soup = BeautifulSoup(response.text, 'html.parser')
-        for s in soup(["script", "style", "svg", "footer", "nav", "noscript"]): s.extract()
+        
+        # Limpieza de código basura
+        for s in soup(["script", "style", "svg", "footer", "nav", "noscript", "meta", "link"]): 
+            s.extract()
+            
         text = soup.get_text(separator=' ')
-        return " ".join(text.split())[:25000], soup.title.string
-    except:
-        return None, "Error de acceso"
+        clean_text = " ".join(text.split())[:30000] # Cogemos mucho texto para el informe
+        
+        # Obtener título de forma segura (sin que rompa la app si no hay título)
+        page_title = soup.title.string if soup.title else "Análisis Web"
+        
+        if len(clean_text) < 50:
+            return None, "La web parece vacía o está totalmente protegida contra lectura."
+            
+        return clean_text, page_title
+    except Exception as e:
+        return None, f"Error técnico al conectar: {str(e)}"
 
 def create_gauge(score):
     color = "#EF4444" if score < 40 else "#F59E0B" if score < 70 else "#10B981"
@@ -124,7 +155,7 @@ def analyze_business_pro(my_text, comp_text, key):
     date_now = datetime.now().strftime("%d/%m/%Y")
     
     prompt = f"""
-    Fecha: {date_now}. Eres un Consultor de Negocios Senior (Tarifa 1.500€/hora).
+    Fecha: {date_now}. Eres un Consultor de Negocios Senior.
     INSTRUCCIONES DE FORMATO (ESTRICTO):
     - Usa # TÍTULO (H1)
     - Usa ## SUBTÍTULO (H2)
@@ -191,12 +222,13 @@ if not st.session_state.report_pro:
         else:
             progress_text = "Analizando..."
             my_bar = st.progress(0, text=progress_text)
-            steps = [(20, "📡 Conectando..."), (50, "🕵️ Analizando..."), (80, "🧠 Redactando...")]
+            steps = [(20, "📡 Conectando..."), (50, "🕵️ Analizando datos..."), (80, "🧠 Redactando informe...")]
             for p, txt in steps:
                 time.sleep(0.5)
                 my_bar.progress(p, text=txt)
-                
-            my_txt, _ = get_website_content(url_input)
+            
+            # --- MODIFICADO: Captura de error detallada ---
+            my_txt, error_msg = get_website_content(url_input)
             comp_txt, _ = get_website_content(comp_input) if comp_input else ("", "")
             
             if my_txt:
@@ -214,7 +246,9 @@ if not st.session_state.report_pro:
                 my_bar.empty()
                 st.rerun()
             else:
-                st.error("Error al leer la web")
+                # Mostramos el error real
+                st.error(f"❌ Error al leer la web: {error_msg}")
+                st.info("💡 Consejo: Algunas webs grandes (como Autohero o Amazon) tienen sistemas de seguridad muy fuertes. Prueba con la web de una PYME o un blog para verificar que todo funciona.")
 
 else:
     c1, c2 = st.columns([4, 1])
@@ -242,17 +276,16 @@ else:
     with c2:
         st.plotly_chart(create_gauge(st.session_state.score_val), use_container_width=True, config={'displayModeBar': False})
 
-    # INFORME GRATUITO
+    # --- INFORME GRATUITO ---
     st.markdown('<div class="report-content" style="background:white; padding:40px; border-radius:15px; border-left: 10px solid #EF4444; margin-bottom:40px; box-shadow:0 5px 15px rgba(0,0,0,0.05);">', unsafe_allow_html=True)
     st.markdown(free_part)
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # ZONA DE PAGO (SOLUCIÓN HTML COMPRIMIDO)
+    # --- ZONA DE PAGO ---
     if "unlocked" not in st.session_state or not st.session_state.unlocked:
-        # He quitado los espacios iniciales para que no se detecte como código
+        # Aquí está la corrección del código raro (HTML comprimido)
         st.markdown(f"""<div class="paywall-box"><h2 style="font-size:3rem; font-weight:900; margin-bottom:10px; color:white; border:none; background:transparent;">🔒 INFORME COMPLETO BLOQUEADO</h2><p style="color:#94a3b8; font-size:1.2rem; margin-bottom:40px;">Has visto solo la punta del iceberg. Desbloquea las 2000 palabras de estrategia pura.</p><div style="margin-bottom:40px;"><span class="paywall-price">9,99€</span><span style="font-size:1.5rem; color:#64748b; text-decoration:line-through; margin-left:15px;">50€</span></div><div style="background:rgba(255,255,255,0.1); display:inline-block; padding:15px 30px; border-radius:50px; margin-bottom:40px;"><img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" height="25" style="margin:0 10px; vertical-align:middle;"><img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" height="25" style="margin:0 10px; vertical-align:middle; filter: invert(1);"><img src="https://upload.wikimedia.org/wikipedia/commons/f/f2/Google_Pay_Logo.svg" height="25" style="margin:0 10px; vertical-align:middle;"><img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" height="25" style="margin:0 10px; vertical-align:middle;"><img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" height="15" style="margin:0 10px; vertical-align:middle;"></div><br><a href="https://gumroad.com/l/{GUMROAD_PERMALINK}" target="_blank" style="text-decoration:none;"><button style="background: #3b82f6; color: white; padding: 20px 50px; font-size: 1.3rem; font-weight: 800; border-radius: 50px; border: none; cursor: pointer; box-shadow: 0 0 40px rgba(59, 130, 246, 0.4);">DESBLOQUEAR AHORA 🔓</button></a></div>""", unsafe_allow_html=True)
         
-        # INPUT CLAVE
         c1, c2, c3 = st.columns([1,1,1])
         with c2:
             st.markdown("<br>", unsafe_allow_html=True)
