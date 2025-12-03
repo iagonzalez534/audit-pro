@@ -6,6 +6,10 @@ import time
 import plotly.graph_objects as go
 import re
 from datetime import datetime
+import urllib3
+
+# Desactivar advertencias de SSL para mejorar compatibilidad
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(page_title="AUDITPRO | Consultoría Estratégica", page_icon="💎", layout="wide")
@@ -13,8 +17,6 @@ st.set_page_config(page_title="AUDITPRO | Consultoría Estratégica", page_icon=
 # ==========================================
 # ⚙️ CONFIGURACIÓN DE TU NEGOCIO
 # ==========================================
-# IMPORTANTE: He puesto "auditpro" como me has confirmado.
-# Asegúrate de que tu enlace es: https://gumroad.com/l/auditpro
 GUMROAD_PERMALINK = "auditpro" 
 # ==========================================
 
@@ -82,69 +84,67 @@ if not api_key:
 
 # --- FUNCIONES ---
 def verify_gumroad_license(key):
-    """
-    Verifica licencia contra Gumroad.
-    Retorna (True/False, Mensaje explicativo)
-    """
-    # Clave maestra de pruebas
-    if key == "TEST": return True, "Modo Pruebas Activado"
-    
+    if key == "TEST": return True, "Modo Pruebas"
     try:
-        # Petición a la API de Gumroad
         r = requests.post("https://api.gumroad.com/v2/licenses/verify", 
                           data={"product_permalink": GUMROAD_PERMALINK, 
                                 "license_key": key.strip().replace(" ", ""),
                                 "increment_uses_count": "true"})
-        
-        # Analizar respuesta
-        try:
-            data = r.json()
-        except:
-            return False, "Error: Gumroad no respondió correctamente."
-
-        # Si el éxito es True
-        if data.get('success') == True:
-            # Comprobamos devoluciones
-            if data.get('purchase', {}).get('refunded', False):
-                return False, "Esta licencia ha sido reembolsada y ya no es válida."
-            
-            # ¡ÉXITO!
+        data = r.json()
+        if data.get('success') == True and not data.get('purchase', {}).get('refunded', False):
             return True, "Licencia Válida"
-        
-        # Si falló, miramos por qué
-        else:
-            mensaje = data.get('message', 'Error desconocido')
-            # Ayuda para debuggear
-            if "product" in mensaje.lower():
-                return False, f"ERROR DE CONFIGURACIÓN: El producto '{GUMROAD_PERMALINK}' no existe en tu Gumroad. Revisa el enlace."
-            
-            return False, f"Gumroad dice: {mensaje}"
-            
+        return False, "Licencia no encontrada o incorrecta."
     except Exception as e:
         return False, f"Error de conexión: {str(e)}"
 
 def get_website_content(url):
+    """
+    Scraper mejorado con headers avanzados para evitar bloqueos (403/401).
+    """
     try:
+        # Headers que imitan a un navegador Chrome real
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Referer': 'https://www.google.com/'
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+            'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Sec-Fetch-User': '?1',
+            'Cache-Control': 'max-age=0'
         }
-        response = requests.get(url, headers=headers, timeout=20)
+        
+        # verify=False ayuda a veces con errores SSL, aunque es menos seguro
+        response = requests.get(url, headers=headers, timeout=25, verify=False)
         
         if response.status_code != 200:
-            return None, f"Error {response.status_code}: Acceso bloqueado o web no existe."
+            return None, f"La web bloqueó el acceso (Error {response.status_code}). Intenta con otra."
 
         soup = BeautifulSoup(response.text, 'html.parser')
-        for s in soup(["script", "style", "svg", "footer", "nav", "noscript", "meta", "link"]): s.extract()
+        
+        # Limpiar
+        for s in soup(["script", "style", "svg", "footer", "nav", "noscript", "meta", "link", "iframe"]): 
+            s.extract()
+            
         text = soup.get_text(separator=' ')
         clean_text = " ".join(text.split())[:30000]
+        
         page_title = soup.title.string if soup.title else "Análisis Web"
         
-        if len(clean_text) < 50: return None, "Web protegida o vacía."
+        if len(clean_text) < 100: 
+            return None, "La web parece vacía o está ultra-protegida (Cloudflare)."
+            
         return clean_text, page_title
+        
+    except requests.exceptions.SSLError:
+        return None, "Error de seguridad SSL en la web."
+    except requests.exceptions.ConnectionError:
+        return None, "No se pudo conectar a la web. Verifica la URL."
     except Exception as e:
-        return None, f"Error: {str(e)}"
+        return None, f"Error técnico: {str(e)}"
 
 def create_gauge(score):
     color = "#EF4444" if score < 40 else "#F59E0B" if score < 70 else "#10B981"
@@ -237,7 +237,7 @@ if not st.session_state.report_pro:
     st.markdown('</div>', unsafe_allow_html=True)
 
     if analyze_btn:
-        if not api_key: st.error("⚠️ Por favor, introduce tu API Key de OpenAI en la barra lateral izquierda.")
+        if not api_key: st.error("⚠️ Falta API Key")
         elif not url_input or not email_input: st.warning("⚠️ Web y Email obligatorios")
         else:
             progress_text = "Analizando..."
@@ -253,7 +253,6 @@ if not st.session_state.report_pro:
             if my_txt:
                 full_resp = analyze_business_pro(my_txt, comp_txt, api_key)
                 
-                # --- MANEJO DE ERROR DE API ---
                 if full_resp == "ERROR_API_KEY":
                     st.error("🚨 ERROR: La clave API de OpenAI es incorrecta. Por favor, genera una nueva.")
                     my_bar.empty()
@@ -271,8 +270,8 @@ if not st.session_state.report_pro:
                     my_bar.empty()
                     st.rerun()
             else:
-                st.error(f"❌ Error al leer la web: {error_msg}")
-                st.info("💡 Consejo: Prueba con otra web más accesible para verificar que funciona.")
+                st.error(f"❌ No se pudo leer la web. {error_msg}")
+                st.info("ℹ️ Intenta con una web más pequeña. Sitios como Amazon o Autohero bloquean a los robots.")
 
 else:
     c1, c2 = st.columns([4, 1])
@@ -307,7 +306,6 @@ else:
 
     # --- ZONA DE PAGO (HTML COMPRIMIDO) ---
     if "unlocked" not in st.session_state or not st.session_state.unlocked:
-        # ATENCIÓN: No poner espacios al inicio de estas líneas de HTML o Streamlit falla
         st.markdown(f"""<div class="paywall-box"><h2 style="font-size:3rem; font-weight:900; margin-bottom:10px; color:white; border:none; background:transparent;">🔒 INFORME COMPLETO BLOQUEADO</h2><p style="color:#94a3b8; font-size:1.2rem; margin-bottom:40px;">Has visto solo la punta del iceberg. Desbloquea las 2000 palabras de estrategia pura.</p><div style="margin-bottom:40px;"><span class="paywall-price">9,99€</span><span style="font-size:1.5rem; color:#64748b; text-decoration:line-through; margin-left:15px;">50€</span></div><div style="background:rgba(255,255,255,0.1); display:inline-block; padding:15px 30px; border-radius:50px; margin-bottom:40px;"><img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" height="25" style="margin:0 10px; vertical-align:middle;"><img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" height="25" style="margin:0 10px; vertical-align:middle; filter: invert(1);"><img src="https://upload.wikimedia.org/wikipedia/commons/f/f2/Google_Pay_Logo.svg" height="25" style="margin:0 10px; vertical-align:middle;"><img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" height="25" style="margin:0 10px; vertical-align:middle;"><img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" height="15" style="margin:0 10px; vertical-align:middle;"></div><br><a href="https://gumroad.com/l/{GUMROAD_PERMALINK}" target="_blank" style="text-decoration:none;"><button style="background: #3b82f6; color: white; padding: 20px 50px; font-size: 1.3rem; font-weight: 800; border-radius: 50px; border: none; cursor: pointer; box-shadow: 0 0 40px rgba(59, 130, 246, 0.4);">DESBLOQUEAR AHORA 🔓</button></a></div>""", unsafe_allow_html=True)
         
         c1, c2, c3 = st.columns([1,1,1])
@@ -326,7 +324,7 @@ else:
                             st.session_state.unlocked = True
                             st.rerun()
                         else:
-                            st.error(f"❌ {msg}")
+                            st.error(f"❌ Error: {msg}")
     
     else:
         st.balloons()
