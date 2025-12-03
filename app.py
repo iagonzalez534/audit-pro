@@ -6,6 +6,7 @@ import time
 import plotly.graph_objects as go
 import re
 from datetime import datetime
+import os 
 
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(page_title="AUDITPRO | Consultoría Estratégica", page_icon="💎", layout="wide")
@@ -45,7 +46,7 @@ st.markdown("""
     .paywall-box { background: #020617; color: white; padding: 60px 40px; border-radius: 24px; text-align: center; margin-top: 50px; box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.5); position: relative; z-index: 10; }
     .paywall-price { font-size: 4.5rem; font-weight: 900; color: #2ECC71; }
 
-    /* RESPONSIVE */
+    /* RESPONSIVE (MÓVIL) */
     @media only screen and (max-width: 600px) {
         .main-hero-title { font-size: 3rem !important; letter-spacing: -1px !important; margin-top: 10px !important; }
         .hero-subtitle { font-size: 1.1rem !important; }
@@ -55,25 +56,34 @@ st.markdown("""
         .paywall-box { padding: 20px !important; }
     }
 
+    /* OCULTAR */
     #MainMenu, footer, header {visibility: hidden;}
+    
+    /* BOTONES */
     .stButton>button { width: 100%; background: linear-gradient(135deg, #2563EB 0%, #1d4ed8 100%); color: white; border: none; padding: 18px; font-weight: 800; font-size: 1.2rem; border-radius: 12px; transition: transform 0.2s; box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.4); }
     .stButton>button:hover { transform: scale(1.02); }
 </style>
 """, unsafe_allow_html=True)
 
-# --- GESTIÓN DE CLAVES API ---
+# --- GESTIÓN DE CLAVES API (CORREGIDO PARA EVITAR ERROR EN PC) ---
 api_key = None
-try:
-    if "OPENAI_API_KEY" in st.secrets:
-        api_key = st.secrets["OPENAI_API_KEY"]
-except:
-    pass 
 
+# Intentamos leer la clave de la nube de forma segura
+try:
+    # Solo intentamos acceder a secrets si estamos en un entorno que lo soporta
+    # El try-except atrapa el error si no existe el archivo en tu PC
+    if hasattr(st, "secrets") and "OPENAI_API_KEY" in st.secrets:
+        api_key = st.secrets["OPENAI_API_KEY"]
+except Exception:
+    # Si falla (porque estás en tu ordenador), no hacemos nada y pasamos al siguiente paso
+    pass
+
+# Si no encontramos la clave en la nube, mostramos el menú lateral para ponerla
 if not api_key:
     with st.sidebar:
         st.header("⚙️ Configuración")
         api_key = st.text_input("OpenAI API Key", type="password")
-        st.info("Modo Local Activo")
+        st.info("Modo Local: Introduce tu clave aquí")
 
 # --- FUNCIONES ---
 def verify_gumroad_license(key):
@@ -91,42 +101,27 @@ def verify_gumroad_license(key):
         return False, f"Error de conexión: {str(e)}"
 
 def get_website_content(url):
-    """
-    Función mejorada para leer webs con protección básica.
-    """
     try:
-        # Headers avanzados para parecer un navegador humano y no un robot
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
             'Referer': 'https://www.google.com/'
         }
-        
         response = requests.get(url, headers=headers, timeout=20)
         
-        # Si la web nos bloquea (403) o no existe (404)
         if response.status_code != 200:
-            return None, f"Error {response.status_code}: La web bloquea el acceso o no existe."
+            return None, f"Error {response.status_code}: Acceso bloqueado o web no existe."
 
         soup = BeautifulSoup(response.text, 'html.parser')
-        
-        # Limpieza de código basura
-        for s in soup(["script", "style", "svg", "footer", "nav", "noscript", "meta", "link"]): 
-            s.extract()
-            
+        for s in soup(["script", "style", "svg", "footer", "nav", "noscript", "meta", "link"]): s.extract()
         text = soup.get_text(separator=' ')
-        clean_text = " ".join(text.split())[:30000] # Cogemos mucho texto para el informe
-        
-        # Obtener título de forma segura (sin que rompa la app si no hay título)
+        clean_text = " ".join(text.split())[:30000]
         page_title = soup.title.string if soup.title else "Análisis Web"
         
-        if len(clean_text) < 50:
-            return None, "La web parece vacía o está totalmente protegida contra lectura."
-            
+        if len(clean_text) < 50: return None, "Web protegida o vacía."
         return clean_text, page_title
     except Exception as e:
-        return None, f"Error técnico al conectar: {str(e)}"
+        return None, f"Error: {str(e)}"
 
 def create_gauge(score):
     color = "#EF4444" if score < 40 else "#F59E0B" if score < 70 else "#10B981"
@@ -227,7 +222,6 @@ if not st.session_state.report_pro:
                 time.sleep(0.5)
                 my_bar.progress(p, text=txt)
             
-            # --- MODIFICADO: Captura de error detallada ---
             my_txt, error_msg = get_website_content(url_input)
             comp_txt, _ = get_website_content(comp_input) if comp_input else ("", "")
             
@@ -246,9 +240,8 @@ if not st.session_state.report_pro:
                 my_bar.empty()
                 st.rerun()
             else:
-                # Mostramos el error real
                 st.error(f"❌ Error al leer la web: {error_msg}")
-                st.info("💡 Consejo: Algunas webs grandes (como Autohero o Amazon) tienen sistemas de seguridad muy fuertes. Prueba con la web de una PYME o un blog para verificar que todo funciona.")
+                st.info("💡 Consejo: Prueba con otra web más accesible para verificar que funciona.")
 
 else:
     c1, c2 = st.columns([4, 1])
@@ -281,9 +274,8 @@ else:
     st.markdown(free_part)
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # --- ZONA DE PAGO ---
+    # --- ZONA DE PAGO (HTML COMPRIMIDO PARA EVITAR ERRORES VISUALES) ---
     if "unlocked" not in st.session_state or not st.session_state.unlocked:
-        # Aquí está la corrección del código raro (HTML comprimido)
         st.markdown(f"""<div class="paywall-box"><h2 style="font-size:3rem; font-weight:900; margin-bottom:10px; color:white; border:none; background:transparent;">🔒 INFORME COMPLETO BLOQUEADO</h2><p style="color:#94a3b8; font-size:1.2rem; margin-bottom:40px;">Has visto solo la punta del iceberg. Desbloquea las 2000 palabras de estrategia pura.</p><div style="margin-bottom:40px;"><span class="paywall-price">9,99€</span><span style="font-size:1.5rem; color:#64748b; text-decoration:line-through; margin-left:15px;">50€</span></div><div style="background:rgba(255,255,255,0.1); display:inline-block; padding:15px 30px; border-radius:50px; margin-bottom:40px;"><img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" height="25" style="margin:0 10px; vertical-align:middle;"><img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" height="25" style="margin:0 10px; vertical-align:middle; filter: invert(1);"><img src="https://upload.wikimedia.org/wikipedia/commons/f/f2/Google_Pay_Logo.svg" height="25" style="margin:0 10px; vertical-align:middle;"><img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" height="25" style="margin:0 10px; vertical-align:middle;"><img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" height="15" style="margin:0 10px; vertical-align:middle;"></div><br><a href="https://gumroad.com/l/{GUMROAD_PERMALINK}" target="_blank" style="text-decoration:none;"><button style="background: #3b82f6; color: white; padding: 20px 50px; font-size: 1.3rem; font-weight: 800; border-radius: 50px; border: none; cursor: pointer; box-shadow: 0 0 40px rgba(59, 130, 246, 0.4);">DESBLOQUEAR AHORA 🔓</button></a></div>""", unsafe_allow_html=True)
         
         c1, c2, c3 = st.columns([1,1,1])
